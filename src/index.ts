@@ -6,16 +6,23 @@ const client = new OpenAI({
   apiKey: process.env.OPEN_AI_API_KEY,
 });
 
-client.chat.completions
-  .create({
+async function generateText() {
+  const completion = await client.chat.completions.create({
     model: "gpt-4o-mini",
+    max_completion_tokens: 100,
     messages: [
+      {
+        role: "developer", // definir uma regra
+        content: "Use emojis a cada 2 palavras.",
+      },
       {
         role: "user",
         content: "Escreva uma pequena história sobre unicórnios.",
       },
     ],
-  })
-  .then((completion) => {
-    console.log(completion.choices[0].message.content);
   });
+
+  console.log(completion.choices[0].message.content);
+}
+
+generateText();
