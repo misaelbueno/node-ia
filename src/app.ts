@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import { OpenAI } from "openai";
+import z from "zod";
 
 dotenv.config();
 
@@ -15,11 +16,13 @@ app.post("/generate", async (req, res) => {
   const completion = await client.chat.completions.create({
     model: "gpt-4o-mini",
     max_completion_tokens: 100,
+    // JSON_MODE
+    response_format: { type: "json_object" },
     messages: [
       {
         role: "developer", // definir uma regra
         content:
-          "Você é um assistente que gera histórias de uma frase. Use emojis a cada 2 palavras.",
+          "Liste 3 produtos que atendam a necessidade do usuário. Responda em JSON no formato { produto: [string] }",
       },
       {
         role: "user",
@@ -28,9 +31,17 @@ app.post("/generate", async (req, res) => {
     ],
   });
 
-  res.json({
-    message: completion.choices[0].message.content,
+  const output = JSON.parse(completion.choices[0].message.content ?? "");
+  const schema = z.object({
+    produto: z.array(z.string()),
   });
+
+  const result = schema.safeParse(output);
+  if (!result.success) {
+    return res.status(400).json({ error: "Invalid output format" });
+  }
+
+  res.json(output);
 });
 
 export default app;
